@@ -29,21 +29,55 @@
             fetch('./faithful3.json')
                 .then(res => res.json())
                 .then((data) => {  
+                    // var dailyDataMap = new Map();
+                    // data.forEach(item => {
+                    //     var dateParts = item.date.split('-');
+                    //     var day = parseInt(dateParts[2]);
+                    //     dailyDataMap.set(day, item.cost_price);
+                    // });
+
+                    // // 1일부터 마지막 날까지 순차적으로 데이터를 생성합니다.
+                    // var dateArr = [];
+                    // for (var i = 1; i <= monthDate; i++) {
+                    //     var cost_price = dailyDataMap.has(i) ? dailyDataMap.get(i) : 0;
+                    //     dateArr.push({ "date": i, "cost_price": cost_price });
+                    // }
+
+                    // console.log(dateArr);
+
+
                     var dailyDataMap = new Map();
                     data.forEach(item => {
                         var dateParts = item.date.split('-');
                         var day = parseInt(dateParts[2]);
-                        dailyDataMap.set(day, item.cost_price);
+                        if (dailyDataMap.has(day)) {
+                            var existingData = dailyDataMap.get(day);
+                            existingData.count += 1;
+                            existingData.total += item.cost_price;
+                        } else {
+                            dailyDataMap.set(day, { count: 1, total: item.cost_price });
+                        }
                     });
 
                     // 1일부터 마지막 날까지 순차적으로 데이터를 생성합니다.
                     var dateArr = [];
                     for (var i = 1; i <= monthDate; i++) {
-                        var cost_price = dailyDataMap.has(i) ? dailyDataMap.get(i) : 0;
-                        dateArr.push({ "date": i, "cost_price": cost_price });
+                        var cost_price = 0;
+                        var count = 0;
+                        if (dailyDataMap.has(i)) {
+                            var dailyData = dailyDataMap.get(i);
+                            count = dailyData.count;
+                            cost_price = dailyData.total;
+                        }
+                        dateArr.push({ "date": i, "cost_price": cost_price, "count": count });
                     }
 
                     console.log(dateArr);
+
+                    // 막대 그래프에 넣을 데이터
+                    var dataSet = dateArr;
+
+                    
         
             // 막대 그래프에 넣을 데이터
             var dataSet = d3.nest() //d3.nest()는 .key() method를 이용하여 '데이터의 무엇을 key로 해서 데이터를 수집할 지' 를 지정할 수 있다.
@@ -58,7 +92,8 @@
                             }; 
                         } else {
                             return {
-                            count: v.length,
+                            //count: v.length,
+                            count: d3.sum(v, function(d) { return d.count; }),
                             total: d3.sum(v, function(d) { return d.cost_price; })
                             }; 
                         }
